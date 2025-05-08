@@ -3,6 +3,14 @@ import attrs
 from attrs import define, field
 
 from floris.core import BaseClass, BaseModel
+from floris.core.blockage import (
+    EngineeringGlobalBlockage,
+    MirroredVortexBlockage,
+    NoneBlockage,
+    ParametrizedGlobalBlockage,
+    SelfSimilarBlockage,
+    VortexCylinderBlockage,
+)
 from floris.core.wake_combination import (
     FLS,
     MAX,
@@ -31,6 +39,14 @@ from floris.core.wake_velocity import (
 
 
 MODEL_MAP = {
+    "blockage_model": {
+        "none": NoneBlockage,
+        "parametrized_global": ParametrizedGlobalBlockage,
+        "vortex_cylinder": VortexCylinderBlockage,
+        "mirrored_vortex": MirroredVortexBlockage,
+        "self_similar": SelfSimilarBlockage,
+        "engineering_global": EngineeringGlobalBlockage
+    },
     "combination_model": {
         "fls": FLS,
         "max": MAX,
@@ -77,15 +93,18 @@ class WakeModelManager(BaseClass):
     enable_yaw_added_recovery: bool = field(converter=bool)
     enable_active_wake_mixing: bool = field(converter=bool)
     enable_transverse_velocities: bool = field(converter=bool)
+    enable_blockage: bool = field(converter=bool, default=False)
 
     wake_deflection_parameters: dict = field(converter=dict)
     wake_turbulence_parameters: dict = field(converter=dict)
     wake_velocity_parameters: dict = field(converter=dict, factory=dict)
+    wake_blockage_parameters: dict = field(converter=dict, factory=dict)
 
     combination_model: BaseModel = field(init=False)
     deflection_model: BaseModel = field(init=False)
     turbulence_model: BaseModel = field(init=False)
     velocity_model: BaseModel = field(init=False)
+    blockage_model: BaseModel = field(init=False)
 
     def __attrs_post_init__(self) -> None:
         velocity_model_string = self.model_strings["velocity_model"].lower()
@@ -126,6 +145,25 @@ class WakeModelManager(BaseClass):
         model: BaseModel = MODEL_MAP["combination_model"][combination_model_string]
         self.combination_model = model()
 
+        # Initialize blockage model
+        blockage_model_string = self.model_strings.get("blockage_model", "none").lower()
+        if blockage_model_string == "none" and not self.enable_blockage:
+            # If blockage is disabled or not specified, use None model
+            model: BaseModel = MODEL_MAP["blockage_model"]["none"]
+            self.blockage_model = model()
+        else:
+            # Use the specified blockage model
+            model: BaseModel = MODEL_MAP["blockage_model"][blockage_model_string]
+            if blockage_model_string == "none":
+                model_parameters = None
+            else:
+                model_parameters = self.wake_blockage_parameters.get(blockage_model_string, None)
+            if model_parameters is None:
+                # Use model defaults
+                self.blockage_model = model()
+            else:
+                self.blockage_model = model.from_dict(model_parameters)
+
     @model_strings.validator
     def validate_model_strings(self, instance: attrs.Attribute, value: dict) -> None:
         required_strings = [
@@ -134,6 +172,9 @@ class WakeModelManager(BaseClass):
             "combination_model",
             "turbulence_model"
         ]
+        optional_strings = [
+            "blockage_model"
+        ]
         # Check that all required strings are given
         for s in required_strings:
             if s not in value.keys():
@@ -141,10 +182,11 @@ class WakeModelManager(BaseClass):
 
         # Check that no other strings are given
         for k in value.keys():
-            if k not in required_strings:
+            if k not in required_strings and k not in optional_strings:
                 raise KeyError((
-                    f"Wake: '{k}' was given as input but it is not a valid option."
-                    f"Required inputs are: {', '.join(required_strings)}"
+                    f"Wake: '{k}' was given as input but it is not a valid option. "
+                    f"Required inputs are: {', '.join(required_strings)}. "
+                    f"Optional inputs are: {', '.join(optional_strings)}"
                 ))
 
     @property
@@ -162,3 +204,7 @@ class WakeModelManager(BaseClass):
     @property
     def combination_function(self):
         return self.combination_model.function
+        
+    @property
+    def blockage_function(self):
+        return self.blockage_model.function

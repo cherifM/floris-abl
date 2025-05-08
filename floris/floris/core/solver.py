@@ -60,11 +60,19 @@ def sequential_solver(
     # <<interface>>
     deflection_model_args = model_manager.deflection_model.prepare_function(grid, flow_field)
     deficit_model_args = model_manager.velocity_model.prepare_function(grid, flow_field)
+    
+    # Prepare blockage model if enabled
+    if model_manager.enable_blockage:
+        blockage_model_args = model_manager.blockage_model.prepare_function(grid, flow_field)
 
     # This is u_wake
     wake_field = np.zeros_like(flow_field.u_initial_sorted)
     v_wake = np.zeros_like(flow_field.v_initial_sorted)
     w_wake = np.zeros_like(flow_field.w_initial_sorted)
+    
+    # Initialize blockage field if blockage is enabled
+    if model_manager.enable_blockage:
+        blockage_field = np.zeros_like(flow_field.u_initial_sorted)
 
     # Expand input turbulence intensity to 4d for (n_turbines, grid, grid)
     turbine_turbulence_intensity = flow_field.turbulence_intensities[:, None, None, None]
@@ -75,7 +83,53 @@ def sequential_solver(
     ambient_turbulence_intensities = flow_field.turbulence_intensities.copy()
     ambient_turbulence_intensities = ambient_turbulence_intensities[:, None, None, None]
 
-    # Calculate the velocity deficit sequentially from upstream to downstream turbines
+    # If blockage is enabled, calculate blockage effects for all turbines
+    if model_manager.enable_blockage:
+        # Apply blockage effects to the flow field
+        for i in range(grid.n_turbines):
+            # Get the current turbine quantities
+            x_i = np.mean(grid.x_sorted[:, i:i+1], axis=(2, 3))
+            x_i = x_i[:, :, None, None]
+            y_i = np.mean(grid.y_sorted[:, i:i+1], axis=(2, 3))
+            y_i = y_i[:, :, None, None]
+            z_i = np.mean(grid.z_sorted[:, i:i+1], axis=(2, 3))
+            z_i = z_i[:, :, None, None]
+            
+            u_i = flow_field.u_initial_sorted[:, i:i+1]
+            v_i = flow_field.v_initial_sorted[:, i:i+1]
+            
+            # Calculate thrust coefficient for blockage
+            ct_i = thrust_coefficient(
+                velocities=flow_field.u_initial_sorted,
+                turbulence_intensities=flow_field.turbulence_intensity_field_sorted,
+                air_density=flow_field.air_density,
+                yaw_angles=farm.yaw_angles_sorted,
+                tilt_angles=farm.tilt_angles_sorted,
+                power_setpoints=farm.power_setpoints_sorted,
+                awc_modes=farm.awc_modes_sorted,
+                awc_amplitudes=farm.awc_amplitudes_sorted,
+                thrust_coefficient_functions=farm.turbine_thrust_coefficient_functions,
+            )[:, i:i+1]
+            
+            # Calculate blockage effects - get velocity deficit due to blockage
+            blockage_deficit = model_manager.blockage_function(
+                x_i=x_i,
+                y_i=y_i,
+                z_i=z_i,
+                u_i=u_i,
+                v_i=v_i,
+                ct_i=ct_i,
+                **blockage_model_args
+            )
+            
+            # Add blockage deficit to the total blockage field
+            blockage_field += blockage_deficit
+        
+        # Apply blockage effects to the flow field
+        # Subtract blockage deficit from the initial velocities
+        flow_field.u_sorted = flow_field.u_initial_sorted - blockage_field
+    
+    # Calculate the wake velocity deficit sequentially from upstream to downstream turbines
     for i in range(grid.n_turbines):
 
         # Get the current turbine quantities
@@ -460,6 +514,10 @@ def cc_solver(
     # <<interface>>
     deflection_model_args = model_manager.deflection_model.prepare_function(grid, flow_field)
     deficit_model_args = model_manager.velocity_model.prepare_function(grid, flow_field)
+    
+    # Prepare blockage model if enabled
+    if model_manager.enable_blockage:
+        blockage_model_args = model_manager.blockage_model.prepare_function(grid, flow_field)
 
     # This is u_wake
     v_wake = np.zeros_like(flow_field.v_initial_sorted)
@@ -483,7 +541,53 @@ def cc_solver(
     # sigma_i = np.zeros((shape))
     # sigma_i = np.zeros((len(x_coord), len(wd), len(ws), len(x_coord), y_ngrid, z_ngrid))
 
-    # Calculate the velocity deficit sequentially from upstream to downstream turbines
+    # If blockage is enabled, calculate blockage effects for all turbines
+    if model_manager.enable_blockage:
+        # Apply blockage effects to the flow field
+        for i in range(grid.n_turbines):
+            # Get the current turbine quantities
+            x_i = np.mean(grid.x_sorted[:, i:i+1], axis=(2, 3))
+            x_i = x_i[:, :, None, None]
+            y_i = np.mean(grid.y_sorted[:, i:i+1], axis=(2, 3))
+            y_i = y_i[:, :, None, None]
+            z_i = np.mean(grid.z_sorted[:, i:i+1], axis=(2, 3))
+            z_i = z_i[:, :, None, None]
+            
+            u_i = flow_field.u_initial_sorted[:, i:i+1]
+            v_i = flow_field.v_initial_sorted[:, i:i+1]
+            
+            # Calculate thrust coefficient for blockage
+            ct_i = thrust_coefficient(
+                velocities=flow_field.u_initial_sorted,
+                turbulence_intensities=flow_field.turbulence_intensity_field_sorted,
+                air_density=flow_field.air_density,
+                yaw_angles=farm.yaw_angles_sorted,
+                tilt_angles=farm.tilt_angles_sorted,
+                power_setpoints=farm.power_setpoints_sorted,
+                awc_modes=farm.awc_modes_sorted,
+                awc_amplitudes=farm.awc_amplitudes_sorted,
+                thrust_coefficient_functions=farm.turbine_thrust_coefficient_functions,
+            )[:, i:i+1]
+            
+            # Calculate blockage effects - get velocity deficit due to blockage
+            blockage_deficit = model_manager.blockage_function(
+                x_i=x_i,
+                y_i=y_i,
+                z_i=z_i,
+                u_i=u_i,
+                v_i=v_i,
+                ct_i=ct_i,
+                **blockage_model_args
+            )
+            
+            # Add blockage deficit to the total blockage field
+            blockage_field += blockage_deficit
+        
+        # Apply blockage effects to the flow field
+        # Subtract blockage deficit from the initial velocities
+        flow_field.u_sorted = flow_field.u_initial_sorted - blockage_field
+    
+    # Calculate the wake velocity deficit sequentially from upstream to downstream turbines
     for i in range(grid.n_turbines):
 
         # Get the current turbine quantities
@@ -902,11 +1006,19 @@ def turbopark_solver(
     # <<interface>>
     deflection_model_args = model_manager.deflection_model.prepare_function(grid, flow_field)
     deficit_model_args = model_manager.velocity_model.prepare_function(grid, flow_field)
+    
+    # Prepare blockage model if enabled
+    if model_manager.enable_blockage:
+        blockage_model_args = model_manager.blockage_model.prepare_function(grid, flow_field)
 
     # This is u_wake
     wake_field = np.zeros_like(flow_field.u_initial_sorted)
     v_wake = np.zeros_like(flow_field.v_initial_sorted)
     w_wake = np.zeros_like(flow_field.w_initial_sorted)
+    
+    # Initialize blockage field if blockage is enabled
+    if model_manager.enable_blockage:
+        blockage_field = np.zeros_like(flow_field.u_initial_sorted)
     shape = (farm.n_turbines,) + np.shape(flow_field.u_initial_sorted)
     velocity_deficit = np.zeros(shape)
     deflection_field = np.zeros_like(flow_field.u_initial_sorted)
@@ -920,7 +1032,53 @@ def turbopark_solver(
     ambient_turbulence_intensities = flow_field.turbulence_intensities.copy()
     ambient_turbulence_intensities = ambient_turbulence_intensities[:, None, None, None]
 
-    # Calculate the velocity deficit sequentially from upstream to downstream turbines
+    # If blockage is enabled, calculate blockage effects for all turbines
+    if model_manager.enable_blockage:
+        # Apply blockage effects to the flow field
+        for i in range(grid.n_turbines):
+            # Get the current turbine quantities
+            x_i = np.mean(grid.x_sorted[:, i:i+1], axis=(2, 3))
+            x_i = x_i[:, :, None, None]
+            y_i = np.mean(grid.y_sorted[:, i:i+1], axis=(2, 3))
+            y_i = y_i[:, :, None, None]
+            z_i = np.mean(grid.z_sorted[:, i:i+1], axis=(2, 3))
+            z_i = z_i[:, :, None, None]
+            
+            u_i = flow_field.u_initial_sorted[:, i:i+1]
+            v_i = flow_field.v_initial_sorted[:, i:i+1]
+            
+            # Calculate thrust coefficient for blockage
+            ct_i = thrust_coefficient(
+                velocities=flow_field.u_initial_sorted,
+                turbulence_intensities=flow_field.turbulence_intensity_field_sorted,
+                air_density=flow_field.air_density,
+                yaw_angles=farm.yaw_angles_sorted,
+                tilt_angles=farm.tilt_angles_sorted,
+                power_setpoints=farm.power_setpoints_sorted,
+                awc_modes=farm.awc_modes_sorted,
+                awc_amplitudes=farm.awc_amplitudes_sorted,
+                thrust_coefficient_functions=farm.turbine_thrust_coefficient_functions,
+            )[:, i:i+1]
+            
+            # Calculate blockage effects - get velocity deficit due to blockage
+            blockage_deficit = model_manager.blockage_function(
+                x_i=x_i,
+                y_i=y_i,
+                z_i=z_i,
+                u_i=u_i,
+                v_i=v_i,
+                ct_i=ct_i,
+                **blockage_model_args
+            )
+            
+            # Add blockage deficit to the total blockage field
+            blockage_field += blockage_deficit
+        
+        # Apply blockage effects to the flow field
+        # Subtract blockage deficit from the initial velocities
+        flow_field.u_sorted = flow_field.u_initial_sorted - blockage_field
+    
+    # Calculate the wake velocity deficit sequentially from upstream to downstream turbines
     for i in range(grid.n_turbines):
         # Get the current turbine quantities
         x_i = np.mean(grid.x_sorted[:, i:i+1], axis=(2, 3))
@@ -1165,11 +1323,19 @@ def empirical_gauss_solver(
     # <<interface>>
     deflection_model_args = model_manager.deflection_model.prepare_function(grid, flow_field)
     deficit_model_args = model_manager.velocity_model.prepare_function(grid, flow_field)
+    
+    # Prepare blockage model if enabled
+    if model_manager.enable_blockage:
+        blockage_model_args = model_manager.blockage_model.prepare_function(grid, flow_field)
 
     # This is u_wake
     wake_field = np.zeros_like(flow_field.u_initial_sorted)
     v_wake = np.zeros_like(flow_field.v_initial_sorted)
     w_wake = np.zeros_like(flow_field.w_initial_sorted)
+    
+    # Initialize blockage field if blockage is enabled
+    if model_manager.enable_blockage:
+        blockage_field = np.zeros_like(flow_field.u_initial_sorted)
 
     x_locs = np.mean(grid.x_sorted, axis=(2, 3))[:,:,None]
     downstream_distance_D = x_locs - np.transpose(x_locs, axes=(0,2,1))
@@ -1187,7 +1353,53 @@ def empirical_gauss_solver(
     )
     mixing_factor = mixing_factor * flow_field.turbulence_intensities[:, None, None]
 
-    # Calculate the velocity deficit sequentially from upstream to downstream turbines
+    # If blockage is enabled, calculate blockage effects for all turbines
+    if model_manager.enable_blockage:
+        # Apply blockage effects to the flow field
+        for i in range(grid.n_turbines):
+            # Get the current turbine quantities
+            x_i = np.mean(grid.x_sorted[:, i:i+1], axis=(2, 3))
+            x_i = x_i[:, :, None, None]
+            y_i = np.mean(grid.y_sorted[:, i:i+1], axis=(2, 3))
+            y_i = y_i[:, :, None, None]
+            z_i = np.mean(grid.z_sorted[:, i:i+1], axis=(2, 3))
+            z_i = z_i[:, :, None, None]
+            
+            u_i = flow_field.u_initial_sorted[:, i:i+1]
+            v_i = flow_field.v_initial_sorted[:, i:i+1]
+            
+            # Calculate thrust coefficient for blockage
+            ct_i = thrust_coefficient(
+                velocities=flow_field.u_initial_sorted,
+                turbulence_intensities=flow_field.turbulence_intensity_field_sorted,
+                air_density=flow_field.air_density,
+                yaw_angles=farm.yaw_angles_sorted,
+                tilt_angles=farm.tilt_angles_sorted,
+                power_setpoints=farm.power_setpoints_sorted,
+                awc_modes=farm.awc_modes_sorted,
+                awc_amplitudes=farm.awc_amplitudes_sorted,
+                thrust_coefficient_functions=farm.turbine_thrust_coefficient_functions,
+            )[:, i:i+1]
+            
+            # Calculate blockage effects - get velocity deficit due to blockage
+            blockage_deficit = model_manager.blockage_function(
+                x_i=x_i,
+                y_i=y_i,
+                z_i=z_i,
+                u_i=u_i,
+                v_i=v_i,
+                ct_i=ct_i,
+                **blockage_model_args
+            )
+            
+            # Add blockage deficit to the total blockage field
+            blockage_field += blockage_deficit
+        
+        # Apply blockage effects to the flow field
+        # Subtract blockage deficit from the initial velocities
+        flow_field.u_sorted = flow_field.u_initial_sorted - blockage_field
+    
+    # Calculate the wake velocity deficit sequentially from upstream to downstream turbines
     for i in range(grid.n_turbines):
 
         # Get the current turbine quantities
