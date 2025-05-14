@@ -421,7 +421,6 @@ These improvements enable FLORIS users to:
 
 
 
-The original FLORIS repository can be found at [https://github.com/NREL/floris].
 
 1. Dyer, A. J. (1974). A review of flux-profile relationships. Boundary-Layer Meteorology, 7(3), 363-372.
 2. Monin, A. S., & Obukhov, A. M. (1954). Basic laws of turbulent mixing in the atmosphere near the ground. Tr. Akad. Nauk SSSR Geofiz. Inst, 24(151), 163-187.
@@ -436,3 +435,4 @@ This repository contains:
 - Original code from FLORIS, which is licensed under the BSD-3-Clause license (see LICENSE-FLORIS.txt)
 - New Atmospheric Boundary Layer Physics implementation by Cherif Mihoubi, which is licensed under the MIT license (see LICENSE)
 
+The original FLORIS repository can be found at [https://github.com/NREL/floris].
