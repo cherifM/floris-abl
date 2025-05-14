@@ -433,6 +433,8 @@ These improvements enable FLORIS users to:
 
 This repository contains:
 - Original code from FLORIS, which is licensed under the BSD-3-Clause license (see LICENSE-FLORIS.txt)
-- New Atmospheric Boundary Layer Physics implementation by Cherif Mihoubi, which is licensed under the MIT license (see LICENSE)
+- New Atmospheric Boundary Layer Physics implementation by Cherif Mihoubi, which is licensed under dual licensing:
+   - For academic, research, and non-commercial use: MIT License (see LICENSE-ACADEMIC.txt)
+   - For commercial and industrial use: Commercial License requiring explicit permission 
 
 The original FLORIS repository can be found at [https://github.com/NREL/floris].
