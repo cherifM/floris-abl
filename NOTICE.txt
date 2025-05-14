@@ -1,0 +1,10 @@
+This repository contains code derived from FLORIS, copyright (c) 2024, 
+Alliance for Sustainable Energy LLC, used under the BSD-3-Clause license.
+
+Atmospheric Boundary Layer Physics implementation and extensions
+Copyright (c) 2025 Cherif Mihoubi
+Licensed under MIT License
+
+This combined work is distributed with both licenses. Files or portions
+of code originally from FLORIS remain under BSD-3-Clause license, while
+new implementations and modifications are available under MIT license.
