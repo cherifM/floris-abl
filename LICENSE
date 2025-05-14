@@ -1,6 +1,6 @@
-MIT License
+MIT License with Non-Commercial Restriction
 
-Copyright (c) 2025 [Cherif Mihoubi]
+Copyright (c) 2025 Cherif Mihoubi
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -9,8 +9,18 @@ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 copies of the Software, and to permit persons to whom the Software is
 furnished to do so, subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+1. The above copyright notice and this permission notice shall be included in all
+   copies or substantial portions of the Software.
+
+2. COMMERCIAL AND INDUSTRIAL USE RESTRICTION: 
+   The use of the Software is prohibited for any commercial or industrial purposes without
+   explicit written permission from the copyright holder, Cherif Mihoubi.
+   "Commercial purposes" includes any activity intended for or directed toward commercial
+   advantage or monetary compensation. "Industrial purposes" includes any application 
+   in industrial processes, manufacturing, or for-profit business operations.
+   
+   To request permission for commercial or industrial use, contact:
+   [your contact information]
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
