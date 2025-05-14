@@ -1,31 +1,11 @@
-MIT License with Non-Commercial Restriction
+# Multi-Licensing Terms for FLORIS-ABL
 
-Copyright (c) 2025 Cherif Mihoubi
+This repository contains:
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+1. Code derived from FLORIS (https://github.com/NREL/floris), which is licensed under the BSD-3-Clause license (see LICENSE-FLORIS.txt)
 
-1. The above copyright notice and this permission notice shall be included in all
-   copies or substantial portions of the Software.
+2. Atmospheric Boundary Layer Physics implementation by Cherif Mihoubi, which is available under dual licensing:
+   - For academic, research, and non-commercial use: MIT License (see LICENSE-ACADEMIC.txt)
+   - For commercial and industrial use: Commercial License requiring explicit permission (see LICENSE-COMMERCIAL.txt)
 
-2. COMMERCIAL AND INDUSTRIAL USE RESTRICTION: 
-   The use of the Software is prohibited for any commercial or industrial purposes without
-   explicit written permission from the copyright holder, Cherif Mihoubi.
-   "Commercial purposes" includes any activity intended for or directed toward commercial
-   advantage or monetary compensation. "Industrial purposes" includes any application 
-   in industrial processes, manufacturing, or for-profit business operations.
-   
-   To request permission for commercial or industrial use, contact:
-   [cmihoubi@gmail.com]
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+All users must comply with the terms of both the BSD-3-Clause license (for original FLORIS components
